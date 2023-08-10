@@ -4,8 +4,7 @@ import { ModalInterface } from './interface';
 
 const Default: ModalOptions = {
     placement: 'center',
-    backdropClasses:
-        'bg-gray-900 bg-opacity-50 dark:bg-opacity-80 fixed inset-0 z-40',
+    backdropClasses: 'bg-black bg-opacity-30 fixed inset-0 z-40',
     backdrop: 'dynamic',
     closable: true,
     onHide: () => {},
