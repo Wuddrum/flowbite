@@ -1,27 +1,27 @@
-import { initAccordions } from './accordion';
-import { initCarousels } from './carousel';
-import { initCollapses } from './collapse';
-import { initDials } from './dial';
-import { initDismisses } from './dismiss';
-import { initDrawers } from './drawer';
-import { initDropdowns } from './dropdown';
+// import { initAccordions } from './accordion';
+// import { initCarousels } from './carousel';
+// import { initCollapses } from './collapse';
+// import { initDials } from './dial';
+// import { initDismisses } from './dismiss';
+// import { initDrawers } from './drawer';
+// import { initDropdowns } from './dropdown';
 import { initModals } from './modal';
 import { initPopovers } from './popover';
-import { initTabs } from './tabs';
+// import { initTabs } from './tabs';
 import { initTooltips } from './tooltip';
 
 export function initFlowbite() {
-    initAccordions();
-    initCollapses();
-    initCarousels();
-    initDismisses();
-    initDropdowns();
+    // initAccordions();
+    // initCollapses();
+    // initCarousels();
+    // initDismisses();
+    // initDropdowns();
     initModals();
-    initDrawers();
-    initTabs();
+    // initDrawers();
+    // initTabs();
     initTooltips();
     initPopovers();
-    initDials();
+    // initDials();
 }
 
 if (typeof window !== 'undefined') {
