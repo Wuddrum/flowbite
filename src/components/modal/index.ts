@@ -12,13 +12,21 @@ const Default: ModalOptions = {
     onToggle: () => {},
 };
 
+const MinResizeWidth = 200;
+const MinResizeHeight = 100;
+
 class Modal implements ModalInterface {
     _targetEl: HTMLElement | null;
     _options: ModalOptions;
     _isHidden: boolean;
     _backdropEl: HTMLElement | null;
-    _clickOutsideEventListener: EventListenerOrEventListenerObject;
+    _mouseUpOutsideEventListener: EventListenerOrEventListenerObject;
     _keydownEventListener: EventListenerOrEventListenerObject;
+    _resizeTargetEl: HTMLElement | null;
+    _modalWidthBeforeResize: number;
+    _modalHeightBeforeResize: number;
+    _resizeMouseDownX: number;
+    _resizeMouseDownY: number;
 
     constructor(
         targetEl: HTMLElement | null = null,
@@ -36,6 +44,26 @@ class Modal implements ModalInterface {
             this._getPlacementClasses().map((c) => {
                 this._targetEl.classList.add(c);
             });
+        }
+
+        const resizeEl = this._targetEl.querySelector(
+            '[data-modal-resize-target]'
+        );
+        if (resizeEl) {
+            const resizeTargetId = resizeEl.getAttribute(
+                'data-modal-resize-target'
+            );
+            const resizeTargetEl = this._targetEl.querySelector<HTMLElement>(
+                `#${resizeTargetId}`
+            );
+            if (resizeTargetEl) {
+                this._resizeTargetEl = resizeTargetEl;
+                resizeEl.addEventListener(
+                    'mousedown',
+                    this._onResizeMouseDown,
+                    true
+                );
+            }
         }
     }
 
@@ -59,12 +87,12 @@ class Modal implements ModalInterface {
 
     _setupModalCloseEventListeners() {
         if (this._options.backdrop === 'dynamic') {
-            this._clickOutsideEventListener = (ev: MouseEvent) => {
-                this._handleOutsideClick(ev.target);
+            this._mouseUpOutsideEventListener = (ev: MouseEvent) => {
+                this._handleOutsideMouseUp(ev.target);
             };
             this._targetEl.addEventListener(
-                'click',
-                this._clickOutsideEventListener,
+                'mouseup',
+                this._mouseUpOutsideEventListener,
                 true
             );
         }
@@ -85,7 +113,7 @@ class Modal implements ModalInterface {
         if (this._options.backdrop === 'dynamic') {
             this._targetEl.removeEventListener(
                 'click',
-                this._clickOutsideEventListener,
+                this._mouseUpOutsideEventListener,
                 true
             );
         }
@@ -96,7 +124,7 @@ class Modal implements ModalInterface {
         );
     }
 
-    _handleOutsideClick(target: EventTarget) {
+    _handleOutsideMouseUp(target: EventTarget) {
         if (
             target === this._targetEl ||
             (target === this._backdropEl && this.isVisible())
@@ -135,6 +163,52 @@ class Modal implements ModalInterface {
                 return ['justify-center', 'items-center'];
         }
     }
+
+    __onResizeMouseDown(e: MouseEvent) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        this._modalWidthBeforeResize = this._resizeTargetEl.clientWidth;
+        this._modalHeightBeforeResize = this._resizeTargetEl.clientHeight;
+        this._resizeMouseDownX = e.pageX;
+        this._resizeMouseDownY = e.pageY;
+
+        document.addEventListener('mousemove', this._onResizeMouseMove, true);
+        document.addEventListener('mouseup', this._onResizeMouseUp, true);
+    }
+
+    _onResizeMouseDown = this.__onResizeMouseDown.bind(this);
+
+    __onResizeMouseMove(e: MouseEvent) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const deltaX = e.pageX - this._resizeMouseDownX;
+        const deltaY = e.pageY - this._resizeMouseDownY;
+        let newWidth = this._modalWidthBeforeResize + deltaX;
+        let newHeight = this._modalHeightBeforeResize + deltaY;
+        newWidth = Math.max(MinResizeWidth, newWidth);
+        newHeight = Math.max(MinResizeHeight, newHeight);
+
+        this._resizeTargetEl.style.width = `${newWidth}px`;
+        this._resizeTargetEl.style.height = `${newHeight}px`;
+        this._resizeTargetEl.style.maxWidth = '100%';
+    }
+
+    _onResizeMouseMove = this.__onResizeMouseMove.bind(this);
+
+    __onResizeMouseUp(e: MouseEvent) {
+        e.stopPropagation();
+
+        document.removeEventListener(
+            'mousemove',
+            this._onResizeMouseMove,
+            true
+        );
+        document.removeEventListener('mouseup', this._onResizeMouseUp, true);
+    }
+
+    _onResizeMouseUp = this.__onResizeMouseUp.bind(this);
 
     toggle() {
         if (this._isHidden) {
