@@ -245,9 +245,6 @@ class Modal implements ModalInterface {
         e.stopPropagation();
         e.preventDefault();
 
-        console.log('target');
-        console.log(e.target);
-
         this._dragMouseDownX = e.pageX;
         this._dragMouseDownY = e.pageY;
 
