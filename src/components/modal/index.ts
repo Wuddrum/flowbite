@@ -20,13 +20,21 @@ class Modal implements ModalInterface {
     _options: ModalOptions;
     _isHidden: boolean;
     _backdropEl: HTMLElement | null;
-    _mouseUpOutsideEventListener: EventListenerOrEventListenerObject;
+    _clickOutsideEventListener: EventListenerOrEventListenerObject;
     _keydownEventListener: EventListenerOrEventListenerObject;
     _resizeTargetEl: HTMLElement | null;
     _modalWidthBeforeResize: number;
     _modalHeightBeforeResize: number;
     _resizeMouseDownX: number;
     _resizeMouseDownY: number;
+    _dragAnchorEl: HTMLElement | null;
+    _dragTargetEl: HTMLElement | null;
+    _dragXBeforeDragging: number;
+    _dragYBeforeDragging: number;
+    _currentDragX: number;
+    _currentDragY: number;
+    _dragMouseDownX: number;
+    _dragMouseDownY: number;
 
     constructor(
         targetEl: HTMLElement | null = null,
@@ -36,6 +44,10 @@ class Modal implements ModalInterface {
         this._options = { ...Default, ...options };
         this._isHidden = true;
         this._backdropEl = null;
+        this._dragXBeforeDragging = 0;
+        this._dragYBeforeDragging = 0;
+        this._currentDragX = 0;
+        this._currentDragY = 0;
         this._init();
     }
 
@@ -65,6 +77,24 @@ class Modal implements ModalInterface {
                 );
             }
         }
+
+        const dragAnchorEl =
+            this._targetEl.querySelector<HTMLElement>('[data-modal-drag]');
+        if (dragAnchorEl) {
+            const dragTargetId = dragAnchorEl.getAttribute('data-modal-drag');
+            const dragTargetEl = this._targetEl.querySelector<HTMLElement>(
+                `#${dragTargetId}`
+            );
+            if (dragTargetEl) {
+                this._dragAnchorEl = dragAnchorEl;
+                this._dragTargetEl = dragTargetEl;
+                this._dragAnchorEl.addEventListener(
+                    'mousedown',
+                    this._onDragMouseDown,
+                    true
+                );
+            }
+        }
     }
 
     _createBackdrop() {
@@ -87,12 +117,12 @@ class Modal implements ModalInterface {
 
     _setupModalCloseEventListeners() {
         if (this._options.backdrop === 'dynamic') {
-            this._mouseUpOutsideEventListener = (ev: MouseEvent) => {
-                this._handleOutsideMouseUp(ev.target);
+            this._clickOutsideEventListener = (ev: MouseEvent) => {
+                this._handleOutsideClick(ev.target);
             };
             this._targetEl.addEventListener(
                 'mouseup',
-                this._mouseUpOutsideEventListener,
+                this._clickOutsideEventListener,
                 true
             );
         }
@@ -113,7 +143,7 @@ class Modal implements ModalInterface {
         if (this._options.backdrop === 'dynamic') {
             this._targetEl.removeEventListener(
                 'click',
-                this._mouseUpOutsideEventListener,
+                this._clickOutsideEventListener,
                 true
             );
         }
@@ -124,7 +154,7 @@ class Modal implements ModalInterface {
         );
     }
 
-    _handleOutsideMouseUp(target: EventTarget) {
+    _handleOutsideClick(target: EventTarget) {
         if (
             target === this._targetEl ||
             (target === this._backdropEl && this.isVisible())
@@ -209,6 +239,55 @@ class Modal implements ModalInterface {
     }
 
     _onResizeMouseUp = this.__onResizeMouseUp.bind(this);
+
+    __onDragMouseDown(e: MouseEvent) {
+        const eventTargetEl = e.target as HTMLElement;
+        if (eventTargetEl.closest('a, button')) {
+            return;
+        }
+
+        e.stopPropagation();
+        e.preventDefault();
+
+        console.log('target');
+        console.log(e.target);
+
+        this._dragMouseDownX = e.pageX;
+        this._dragMouseDownY = e.pageY;
+
+        document.addEventListener('mousemove', this._onDragMouseMove, true);
+        document.addEventListener('mouseup', this._onDragMouseUp, true);
+    }
+
+    _onDragMouseDown = this.__onDragMouseDown.bind(this);
+
+    __onDragMouseMove(e: MouseEvent) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const deltaX = e.pageX - this._dragMouseDownX;
+        const deltaY = e.pageY - this._dragMouseDownY;
+        const newX = this._dragXBeforeDragging + deltaX;
+        const newY = this._dragYBeforeDragging + deltaY;
+
+        this._currentDragX = newX;
+        this._currentDragY = newY;
+        this._dragTargetEl.style.transform = `translate(${newX}px, ${newY}px)`;
+    }
+
+    _onDragMouseMove = this.__onDragMouseMove.bind(this);
+
+    __onDragMouseUp(e: MouseEvent) {
+        e.stopPropagation();
+
+        this._dragXBeforeDragging = this._currentDragX;
+        this._dragYBeforeDragging = this._currentDragY;
+
+        document.removeEventListener('mousemove', this._onDragMouseMove, true);
+        document.removeEventListener('mouseup', this._onDragMouseUp, true);
+    }
+
+    _onDragMouseUp = this.__onDragMouseUp.bind(this);
 
     toggle() {
         if (this._isHidden) {
