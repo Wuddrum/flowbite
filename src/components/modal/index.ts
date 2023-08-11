@@ -58,13 +58,9 @@ class Modal implements ModalInterface {
             });
         }
 
-        const resizeEl = this._targetEl.querySelector(
-            '[data-modal-resize-target]'
-        );
+        const resizeEl = this._targetEl.querySelector('[data-modal-resize]');
         if (resizeEl) {
-            const resizeTargetId = resizeEl.getAttribute(
-                'data-modal-resize-target'
-            );
+            const resizeTargetId = resizeEl.getAttribute('data-modal-resize');
             const resizeTargetEl = this._targetEl.querySelector<HTMLElement>(
                 `#${resizeTargetId}`
             );
